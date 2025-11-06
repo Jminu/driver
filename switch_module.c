@@ -56,6 +56,7 @@ static int __init switch_module_init(void) {
 	}
 
 	printk(KERN_INFO "gpio switch module loaded\n");
+	return 1;
 }
 
 static void __exit switch_module_exit(void) {

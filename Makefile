@@ -1,6 +1,7 @@
 obj-m += led_module.o\
 	 hello_module.o\
-	 switch_module.o
+	 switch_module.o\
+	 led_btn_module.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
