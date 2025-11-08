@@ -19,9 +19,12 @@ static struct device *led_dev;
 static void blink(int gpio) {
     for(int i = 0; i < 5; i++) {
         gpio_set_value(gpio, 0);
-        msleep(1000);
+        msleep(200);
+
         gpio_set_value(gpio, 1);
+        msleep(200)
     }
+    gpio_set_value(gpio, 1);
 }
 
 static ssize_t write_led(struct file *file, const char __user *buf, size_t len, loff_t *pos) {
