@@ -17,9 +17,9 @@ static struct class *led_class;
 static struct device *led_dev;
 
 static void blink(int gpio) {
-    while (1) {
+    for(int i = 0; i < 5; i++) {
         gpio_set_value(gpio, 0);
-        msleep(200);
+        msleep(1000);
         gpio_set_value(gpio, 1);
     }
 }
@@ -74,6 +74,8 @@ static void __exit led_module_exit(void) {
     gpio_free(GPIO_LED);
     device_destroy(led_class, dev_num);
     class_destroy(led_class);
+    cdev_del(&led_cdev);
+    unregister_chrdev_region(led_num, 1);
     printk(KERN_INFO "module unload\n");
 }
 
