@@ -5,7 +5,7 @@
 #include <linux/cdev.h>
 #include <linux/fs.h>
 #include <linux/device.h>
-#include <linux/timer.h>
+#include <linux/delay.h>
 
 #define GPIO_LED 529
 #define DRIVER_NAME "led_driver"
@@ -19,7 +19,7 @@ static struct device *led_dev;
 static void blink(int gpio) {
     while (1) {
         gpio_set_value(gpio, 0);
-        sleep(1);
+        msleep(200);
         gpio_set_value(gpio, 1);
     }
 }
@@ -45,12 +45,12 @@ const struct file_operations fops = {
     .write = write_led,
 };
 
-static int __init led_module_init() {
+static int __init led_module_init(void) {
     int ret;
     ret = gpio_request(GPIO_LED, "LED GPIO");
     ret = gpio_direction_output(GPIO_LED, 0);
 
-    ret = alloc_chrdev_region(dev_num, 0, 0, DRIVER_NAME);
+    ret = alloc_chrdev_region(&dev_num, 0, 0, DRIVER_NAME);
     if (ret != 0) {
         printk(KERN_ERR "device number alloc fail\n");
         return -1;
@@ -66,15 +66,15 @@ static int __init led_module_init() {
     led_class = class_create(CLASS_NAME);
     led_dev = device_create(&led_class, NULL, dev_num, NULL, DRIVER_NAME);
 
-    printk(KENR_INFO "init success\n");
+    printk(KERN_INFO "init success\n");
     return 1;
 }
 
-static void __exit led_module_exit() {
+static void __exit led_module_exit(void) {
     gpio_free(GPIO_LED);
     device_destroy(&led_class, dev_num);
     class_destroy(&led_class);
-    printk("module unload\n");
+    printk(KERN_INFO "module unload\n");
 }
 
 module_init(led_module_init);
