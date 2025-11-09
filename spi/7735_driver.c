@@ -29,6 +29,23 @@ static int st7735_custom_probe(struct spi_device *spi) {
 
     printk(KERN_INFO "Probe func success: reset=%d dc=%d bl=%d\n", desc_to_gpio(priv->reset), desc_to_gpio(priv->dc), desv_to_gpio(priv->bl));
 
+    // reset 0, 1 토글
+    gpiod_set_value(priv->reset, 0);
+    msleep(10);
+    gpiod_set_value(priv->reset, 1);
+    msleep(100);
+
+    // back light 토글(테스트)
+    gpiod_set_value(priv->bl, 0);
+    msleep(100);
+    gpiod_set_value(priv->bl, 1);
+    msleep(100);
+    gpiod_set_value(priv->bl, 0);
+    msleep(100);
+    gpiod_set_value(priv->bl, 1);
+    msleep(100);
+
+
     return 0;
 }
 
