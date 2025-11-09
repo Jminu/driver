@@ -27,7 +27,7 @@ static int st7735_custom_probe(struct spi_device *spi) {
 
     spi_set_drvdata(spi, priv);
 
-    printk(KERN_INFO "Probe func success: reset=%d dc=%d bl=%d\n", desc_to_gpio(priv->reset), desc_to_gpio(priv->dc), desv_to_gpio(priv->bl));
+    printk(KERN_INFO "Probe func success: reset=%d dc=%d bl=%d\n", desc_to_gpio(priv->reset), desc_to_gpio(priv->dc), desc_to_gpio(priv->bl));
 
     // reset 0, 1 토글
     gpiod_set_value(priv->reset, 0);
@@ -52,8 +52,6 @@ static int st7735_custom_probe(struct spi_device *spi) {
 // spi드라이버를 디바이스에 언바인딩
 static void st7735_custom_remove(struct spi_device *spi) {
     printk(KERN_INFO "Remove func success\n");
-
-    return 0;
 }
 
 static const struct of_device_id st7735_custom_id[] = {
