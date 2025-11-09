@@ -1,0 +1,27 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2711";
+
+    fragment@0 {
+        target = <&spi0>; // SPI0 버스를 타겟으로
+        __overlay__ {
+            st7735@0 {
+                // ⭐️ 이 이름이 C 코드와 일치해야 합니다.
+                compatible = "my-custom,st7735"; 
+                
+                reg = <0>; // CS 0 (CE0, BCM 8)
+                spi-max-frequency = <16000000>;
+
+                // ⭐️ config.txt 대신 여기에 핀 정보를 적습니다.
+                // 사용자가 설정한 BCM 22, 17을 사용
+                reset-gpios = <&gpio 22 0>; // BCM 22
+                dc-gpios = <&gpio 17 0>;    // BCM 17
+                
+                // 백라이트 LED (BCM 18에 연결했다고 가정)
+                bl-gpios = <&gpio 27 0>; 
+            };
+        };
+    };
+};
