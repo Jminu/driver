@@ -76,6 +76,8 @@ static int st7735_custom_probe(struct spi_device *spi) {
 
 // spi드라이버를 디바이스에 언바인딩
 static void st7735_custom_remove(struct spi_device *spi) {
+    struct st7735_priv *priv = spi_get_drvdata(spi);
+    gpiod_set_value(priv->bl, 0);
     printk(KERN_INFO "Remove func success\n");
 }
 
