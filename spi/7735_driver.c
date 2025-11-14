@@ -55,6 +55,64 @@ static void st7735_write_data(struct st7735_priv *priv, const char *buf, size_t 
     spi_write(priv->spi, buf, len); // 쓰기모드에서 buf데이터를 len크기만큼 write
 }
 
+static void st7735_hw_init(struct st7735_priv *priv)
+{
+    /* 1. 물리적 리셋 */
+    gpiod_set_value(priv->reset, 0); mdelay(10);
+    gpiod_set_value(priv->reset, 1); mdelay(120);
+
+    /* 2. 소프트웨어 리셋 (0x01) */
+    st7735_write_cmd(priv, 0x01); 
+    mdelay(150); 
+
+    /* 3. 슬립 아웃 (0x11) */
+    st7735_write_cmd(priv, 0x11); 
+    mdelay(500); 
+
+    /* 4. 프레임 레이트 제어 (0xB1) - 필수! */
+    st7735_write_cmd(priv, 0xB1); // FRMCTR1
+    u8 frmctr1[] = { 0x01, 0x2C, 0x2D };
+    st7735_write_data(priv, frmctr1, 3);
+    
+    /* 5. 디스플레이 인버전 제어 (0xB4) */
+    st7735_write_cmd(priv, 0xB4); // INVCTR
+    u8 invctr[] = { 0x07 };
+    st7735_write_data(priv, invctr, 1);
+    
+    /* 6. 파워 컨트롤 1 (0xC0) - 필수! 내부 전압 설정 */
+    st7735_write_cmd(priv, 0xC0); // PWCTR1
+    u8 pwctr1[] = { 0xA2, 0x02, 0x84 };
+    st7735_write_data(priv, pwctr1, 3);
+    
+    /* 7. 파워 컨트롤 2 (0xC1) */
+    st7735_write_cmd(priv, 0xC1); // PWCTR2
+    u8 pwctr2[] = { 0xC5 };
+    st7735_write_data(priv, pwctr2, 1);
+    
+    /* 8. VCOM 제어 1 (0xC5) - 필수! 공통 전극 전압 설정 */
+    st7735_write_cmd(priv, 0xC5); // VMCTR1
+    u8 vmctr1[] = { 0x0E };
+    st7735_write_data(priv, vmctr1, 1);
+
+    /* 9. 픽셀 포맷 (0x3A) */
+    st7735_write_cmd(priv, 0x3A); // COLMOD
+    u8 colmod[] = { 0x05 }; // 0x05 = 16bpp (RGB565)
+    st7735_write_data(priv, colmod, 1);
+
+    /* 10. 메모리 접근 제어 (0x36) - 노이즈/방향 해결용 */
+    st7735_write_cmd(priv, 0x36); // MADCTL
+    u8 madctl[] = { 0xC0 }; // (BGR 비트 = 0)
+    st7735_write_data(priv, madctl, 1);
+
+    /* 11. 화면 ON */
+    st7735_write_cmd(priv, 0x29); // DISPON
+    mdelay(100);
+
+    /* 12. 백라이트 ON (모든 준비 완료) */
+    gpiod_set_value(priv->bl, 1);
+    pr_info("st7735_custom: Backlight ON (Full Init)\n");
+}
+
 // spi드라이버를 디바이스에 바인딩
 static int st7735_custom_probe(struct spi_device *spi) {
     struct device *dev = &spi->dev;
@@ -79,6 +137,9 @@ static int st7735_custom_probe(struct spi_device *spi) {
     priv->bl = devm_gpiod_get(dev, "bl", GPIOD_OUT_HIGH);
 
     spi_set_drvdata(spi, priv);
+
+    st7735_hw_init(spi, priv);
+
     gpiod_set_value(priv->reset, 0);
     mdelay(100);
     gpiod_set_value(priv->reset, 1);
