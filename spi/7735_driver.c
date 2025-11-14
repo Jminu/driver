@@ -27,6 +27,14 @@ static struct st7735_priv {
     u8 *vmem;
 };
 
+static int st7735_fb_mmap(struct fb_info *info, struct vm_area_struct *vma)
+{
+    /* * vm_map_ram은 vmalloc 영역(info->fix.smem_start)을
+     * vma(유저 공간의 가상 메모리 영역)에 매핑하는 표준 커널 헬퍼입니다.
+     */
+    return vm_map_ram(vma, (void *)info->fix.smem_start, info->fix.smem_len);
+}
+
 static struct fb_ops st7735_fb_ops = {
     .owner      = THIS_MODULE,
     .fb_read    = fb_sys_read,   // 표준 읽기
@@ -34,6 +42,7 @@ static struct fb_ops st7735_fb_ops = {
     .fb_fillrect= cfb_fillrect,  // cfb: vmem에 사각형 그리기
     .fb_copyarea= cfb_copyarea,  // cfb: vmem 영역 복사
     .fb_imageblit = cfb_imageblit, // cfb: vmem에 이미지 그리기
+    .fb_mmap = st7735_fb_mmap,
 };
 
 /* 타이머 설정 */
