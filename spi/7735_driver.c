@@ -11,8 +11,8 @@
 
 #define LCD_WIDTH 128
 #define LCD_HEIGHT 160
-#define X_OFFSET 2
-#define Y_OFFSET 1
+#define X_OFFSET 1
+#define Y_OFFSET 2
 
 static void update_st7735_lcd(struct fb_info *info, struct list_head *pagelist);
 
