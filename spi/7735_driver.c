@@ -6,7 +6,7 @@
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
 #include <linux/fb.h>
-#include <linux/vamlloc.h>
+#include <linux/vmalloc.h>
 #include <linux/string.h>
 
 #define LCD_WIDTH 160
