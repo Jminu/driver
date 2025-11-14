@@ -95,7 +95,7 @@ static int st7735_custom_probe(struct spi_device *spi) {
     priv->vmem = vzalloc(vmem_size); // ram 공간 할당
     
     info->screen_base = (char __iomem *)priv->vmem;
-    info->fix.smem_start (unsigned long)priv->vmem;
+    info->fix.smem_start = (unsigned long)priv->vmem;
     info->fix.smem_len = vmem_size;
 
     strscpy(info->fix.id, "st7735_custom", sizeof(info->fix.id));
