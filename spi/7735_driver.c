@@ -30,31 +30,6 @@ static struct st7735_priv {
     u8 *vmem;
 };
 
-static int st7735_fb_mmap(struct fb_info *info, struct vm_area_struct *vma)
-{
-    struct st7735_priv *priv = info->par;
-    unsigned long start = vma->vm_start;
-    unsigned long size = vma->vm_end - vma->vm_start;
-    unsigned long pfn; // 물리 페이지 프레임 번호
-
-    /* 1. 요청 크기 검증 */
-    if (vma->vm_pgoff != 0)
-        return -EINVAL; 
-
-    if (size > info->fix.smem_len)
-        return -EINVAL; 
-    
-    /* 2. vmalloc 주소의 물리 페이지 프레임 번호(PFN)를 얻습니다. */
-    pfn = vmalloc_to_pfn(priv->vmem);
-
-    /* 3. 물리 페이지를 유저스페이스 가상 주소로 매핑합니다. */
-    // remap_pfn_range를 사용하면 필요한 플래그가 설정됩니다.
-    if (remap_pfn_range(vma, start, pfn, size, vma->vm_page_prot))
-        return -EAGAIN; // 재시도 요청
-
-    return 0;
-}
-
 static struct fb_ops st7735_fb_ops = {
     .owner      = THIS_MODULE,
     .fb_read    = fb_sys_read,   // 표준 읽기
@@ -62,7 +37,6 @@ static struct fb_ops st7735_fb_ops = {
     .fb_fillrect= cfb_fillrect,  // cfb: vmem에 사각형 그리기
     .fb_copyarea= cfb_copyarea,  // cfb: vmem 영역 복사
     .fb_imageblit = cfb_imageblit, // cfb: vmem에 이미지 그리기
-    .fb_mmap = st7735_fb_mmap,
 };
 
 /* 타이머 설정 */
@@ -143,7 +117,7 @@ static void st7735_hw_init(struct st7735_priv *priv)
 
     /* 10. 메모리 접근 제어 (0x36) - 노이즈/방향 해결용 */
     st7735_write_cmd(priv, 0x36); // MADCTL
-    u8 madctl[] = { 0xC8 }; // (BGR 비트 = 0)
+    u8 madctl[] = { 0xC0 }; // (BGR 비트 = 0)
     st7735_write_data(priv, madctl, 1);
 
     st7735_write_cmd(priv, 0x28); // DISPOFF (화면을 끈 상태로 설정)
@@ -179,8 +153,6 @@ static int st7735_custom_probe(struct spi_device *spi) {
     priv->bl = devm_gpiod_get(dev, "bl", GPIOD_OUT_HIGH);
 
     spi_set_drvdata(spi, priv);
-
-    st7735_hw_init(priv);
 
     gpiod_set_value(priv->reset, 0);
     mdelay(100);
@@ -227,7 +199,8 @@ static int st7735_custom_probe(struct spi_device *spi) {
         return -1;
     }
 
-    gpiod_set_value(priv->bl, 1); // 백라이트 키기
+    st7735_hw_init(priv);
+    memset(priv->vmem, 0x00, vmem_size);
 
     ret = register_framebuffer(info);
     if (ret < 0) {
@@ -293,19 +266,40 @@ static void st7735_set_addr_window(struct st7735_priv *priv, int x, int y, int w
     st7735_write_data(priv, raset_data, 4);
 }
 
+// update_st7735_lcd 함수를 다음과 같이 수정
 static void update_st7735_lcd(struct fb_info *info, struct list_head *pagelist) {
     struct st7735_priv *priv = info->par;
+    u16 *vmem16 = (u16 *)priv->vmem;
+    int total_pixels = info->var.xres * info->var.yres;
+    u16 *buf;
+    int i;
+
+    /* 바이트 스왑을 위한 임시 버퍼 할당 */
+    buf = kmalloc(info->fix.smem_len, GFP_KERNEL);
+    if (!buf) {
+        pr_err("st7735: Failed to allocate swap buffer\n");
+        return;
+    }
+
+    /* RGB565 바이트 순서 변환 (리틀엔디안 -> 빅엔디안) */
+    for (i = 0; i < total_pixels; i++) {
+        u16 pixel = vmem16[i];
+        buf[i] = (pixel >> 8) | (pixel << 8); // 바이트 스왑
+    }
 
     /* LCD의 전체 화면을 주소창으로 설정 */
     st7735_set_addr_window(priv, 0, 0, info->var.xres, info->var.yres);
     
     /* LCD 메모리에 쓰기 시작 */
-    st7735_write_cmd(priv, 0x2C); // RAMWR: lcd memory write
+    st7735_write_cmd(priv, 0x2C); // RAMWR
 
-    /* vmem의 모든 픽셀 데이터를 SPI로 전송 */
+    /* 변환된 데이터를 SPI로 전송 */
     gpiod_set_value(priv->dc, 1); // Data 모드
-    spi_write(priv->spi, priv->vmem, info->fix.smem_len);
+    spi_write(priv->spi, (u8 *)buf, info->fix.smem_len);
+
+    kfree(buf);
 }
+
 
 module_spi_driver(st7735_custom_driver);
 
