@@ -35,22 +35,20 @@ static int st7735_fb_mmap(struct fb_info *info, struct vm_area_struct *vma)
     struct st7735_priv *priv = info->par;
     unsigned long start = vma->vm_start;
     unsigned long size = vma->vm_end - vma->vm_start;
-    unsigned long pfn;
-    
+    unsigned long pfn; // 물리 페이지 프레임 번호
+
     /* 1. 요청 크기 검증 */
     if (vma->vm_pgoff != 0)
-        return -EINVAL; // 오프셋이 없어야 합니다.
+        return -EINVAL; 
 
     if (size > info->fix.smem_len)
-        return -EINVAL; // 매핑 요청 크기가 vmem 크기보다 큽니다.
-
+        return -EINVAL; 
+    
     /* 2. vmalloc 주소의 물리 페이지 프레임 번호(PFN)를 얻습니다. */
     pfn = vmalloc_to_pfn(priv->vmem);
 
-    /* 3. VMA 플래그 설정 */
-    vma->vm_flags |= VM_IO | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP;
-
-    /* 4. 물리 페이지를 유저스페이스 가상 주소로 매핑합니다. */
+    /* 3. 물리 페이지를 유저스페이스 가상 주소로 매핑합니다. */
+    // remap_pfn_range를 사용하면 필요한 플래그가 설정됩니다.
     if (remap_pfn_range(vma, start, pfn, size, vma->vm_page_prot))
         return -EAGAIN; // 재시도 요청
 
