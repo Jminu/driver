@@ -11,8 +11,8 @@
 
 #define LCD_WIDTH 128
 #define LCD_HEIGHT 160
-#define X_OFFSET 1
-#define Y_OFFSET 2
+#define X_OFFSET 2
+#define Y_OFFSET 1
 
 static void update_st7735_lcd(struct fb_info *info, struct list_head *pagelist);
 
@@ -246,18 +246,17 @@ static void st7735_set_addr_window(struct st7735_priv *priv, int x, int y, int w
 
     int x_start = x + X_OFFSET;
     int y_start = y + Y_OFFSET;
-
     int x_end = x + w - 1 + X_OFFSET;
     int y_end = y + h - 1 + Y_OFFSET;
 
-    st7735_write_cmd(priv, 0x2A); // CASET: 열 주소를 가져옴
-    caset_data[0] = (x_start >> 8) & 0xFF; // 8칸 오른쪽으로 밀고 (1111 1111)하고 and연산: 상위 8비트
-    caset_data[1] = x_start & 0xFF; // 하위 8비트
+    st7735_write_cmd(priv, 0x2A); // CASET
+    caset_data[0] = (x_start >> 8) & 0xFF;
+    caset_data[1] = x_start & 0xFF;
     caset_data[2] = (x_end >> 8) & 0xFF;
     caset_data[3] = x_end & 0xFF;
     st7735_write_data(priv, caset_data, 4);
 
-    st7735_write_cmd(priv, 0x2B); //RASET: 행 주소 가져옴
+    st7735_write_cmd(priv, 0x2B); //RASET
     raset_data[0] = (y_start >> 8) & 0xFF;
     raset_data[1] = y_start & 0xFF;
     raset_data[2] = (y_end >> 8) & 0xFF;
