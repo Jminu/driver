@@ -69,13 +69,24 @@ static void st7735_hw_init(struct st7735_priv *priv)
 
     /* 3. 슬립 아웃 (0x11) */
     st7735_write_cmd(priv, 0x11); 
-    mdelay(500); 
+    mdelay(500);
+
+    st7735_write_cmd(priv, 0x38); // IDMOFF (Idle Mode Off)
+    mdelay(10);
 
     /* 4. 프레임 레이트 제어 (0xB1) - 필수! */
     st7735_write_cmd(priv, 0xB1); // FRMCTR1
     u8 frmctr1[] = { 0x01, 0x2C, 0x2D };
     st7735_write_data(priv, frmctr1, 3);
     
+    st7735_write_cmd(priv, 0xB2); // FRMCTR2 (idle mode)
+    u8 frmctr2[] = { 0x01, 0x2C, 0x2D };
+    st7735_write_data(priv, frmctr2, 3);
+    
+    st7735_write_cmd(priv, 0xB3); // FRMCTR3 (partial mode)
+    u8 frmctr3[] = { 0x01, 0x2C, 0x2D, 0x01, 0x2C, 0x2D };
+    st7735_write_data(priv, frmctr3, 6);
+
     /* 5. 디스플레이 인버전 제어 (0xB4) */
     st7735_write_cmd(priv, 0xB4); // INVCTR
     u8 invctr[] = { 0x07 };
@@ -106,8 +117,8 @@ static void st7735_hw_init(struct st7735_priv *priv)
     u8 madctl[] = { 0xC0 }; // (BGR 비트 = 0)
     st7735_write_data(priv, madctl, 1);
 
-    /* 11. 화면 ON */
-    st7735_write_cmd(priv, 0x29); // DISPON
+    st7735_write_cmd(priv, 0x28); // DISPOFF (화면을 끈 상태로 설정)
+    st7735_write_cmd(priv, 0x29); // DISPON (화면을 켬)
     mdelay(100);
 
     /* 12. 백라이트 ON (모든 준비 완료) */
