@@ -7,7 +7,7 @@
 #include <linux/device.h>
 
 #define DRIVER_NAME "led_driver"
-#define GPIO_LED 529 // GPIO 17번
+#define GPIO_LED 525 // GPIO13
 
 static dev_t led_num;
 static struct cdev led_cdev;
