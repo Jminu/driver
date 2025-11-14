@@ -76,7 +76,7 @@ static int st7735_custom_probe(struct spi_device *spi) {
     // gpio 가져오기
     priv->reset = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
     priv->dc = devm_gpiod_get(dev, "dc", GPIOD_OUT_HIGH);
-    priv->bl = devm_gpiod_get(dev, "lcd", GPIOD_OUT_HIGH);
+    priv->bl = devm_gpiod_get(dev, "bl", GPIOD_OUT_HIGH);
 
     spi_set_drvdata(spi, priv);
     gpiod_set_value(priv->reset, 0);
@@ -117,6 +117,14 @@ static int st7735_custom_probe(struct spi_device *spi) {
     info->fbops = &st7735_fb_ops;
     info->fbdefio = &st7735_defio;
     fb_deferred_io_init(info);
+    
+    info->pseudo_palette = devm_kmalloc_array(dev, 16, sizeof(u32), GFP_KERNEL);
+    if (info->pseudo_palette == NULL) {
+        printk(KERN_ERR "pseudo_palette alloc err\n");
+        return -1;
+    }
+
+    gpiod_set_value(priv->bl, 1); // 백라이트 키기
 
     ret = register_framebuffer(info);
     if (ret < 0) {
