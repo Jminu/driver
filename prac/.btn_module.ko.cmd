@@ -1,1 +1,0 @@
-savedcmd_/project/driver/prac/btn_module.ko := ld -r -EL  -maarch64elf -z noexecstack --no-warn-rwx-segments --build-id=sha1  -T scripts/module.lds -o /project/driver/prac/btn_module.ko /project/driver/prac/btn_module.o /project/driver/prac/btn_module.mod.o /project/driver/prac/.module-common.o
