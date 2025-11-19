@@ -24,10 +24,12 @@ static ssize_t led_write(struct file *file, const char __user *buf, size_t len, 
 	copy_from_user(&command, buf, 1);
 	if (command == '1') {
 		gpio_set_value(LED1, 1);
+		gpio_set_value(LED2, 1);
 		printk(KERN_INFO "gpio set 1\n");
 	}
 	else if (command == '0') {
 		gpio_set_value(LED1, 0);
+		gpio_set_value(LED2, 0);
 		printk(KERN_INFO "gpio set 0\n");
 	}
 	else {
