@@ -9,16 +9,16 @@
 #define IRQ_NAME "button irq"
 
 static int irq_num;
-int mode_flag = 0;
+int g_system_mode = 0;
 
-void irq_btn_handler(int irq, void *data) {
-	if (mode_flag == 0) {
-		mode_flag = 1;
+static irqreturn_t irq_btn_handler(int irq, void *data) {
+	if (g_system_mode == 0) {
+		g_system_mode = 1;
 	}
 	else {
-		mode_flag = 0;
+		g_system_mode = 0;
 	}
-	return;
+	return IRQ_HANDLED;
 }
 
 static int __init btn_init(void) {

@@ -3,7 +3,6 @@
 #include <linux/module.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
-#include <linux/class.h>
 #include <linux/uaccess.h>
 #include <linux/gpio.h>
 
@@ -49,13 +48,13 @@ static const struct file_operations fops = {
 static int __init led_init(void) {
 	int ret;
 
-	ret = gpio_request_one(531, GPIOF_OUT_INIT_LOW);
+	ret = gpio_request_one(LED1, GPIOF_OUT_INIT_LOW, DEVICE_NAME);
 	if (ret != 0) {
 		printk(KERN_ERR "gpio request err\n");
 		return -1;
 	}
 
-	ret = gpio_request_one(525, GPIOF_OUT_INIT_LOW);
+	ret = gpio_request_one(LED2, GPIOF_OUT_INIT_LOW, DEVICE_NAME);
 	if (ret != 0) {
 		printk(KERN_ERR "gpio request err\n");
 		return -1;
