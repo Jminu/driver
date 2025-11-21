@@ -10,7 +10,8 @@
 		__overlay__ {
 			status = "okay";
 
-			hd44780: hd44780@27 {
+			hd44780: hd44780@27d
+			{
 				compatible = "jmw,hd44780";
 
 				reg = <0x27>; // 디바이스 주소
