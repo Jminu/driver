@@ -7,6 +7,7 @@
 #include <linux/i2c.h>
 #include <linux/gpio.h>
 #include <linux/cdev.h>
+#include <linux/string.h>
 
 #define DRIVER_NAME "hd44780_driver"
 #define DEVICE_COUNT 1
@@ -157,15 +158,15 @@ static void lcd_init(struct i2c_client *client) {
 	printk(KERN_INFO "lcd init success\n");
 }
 
-static void lcd_print(struct i2c_client *client, const char *str) {
-	int i = 0;
-	while (*str) {
-		lcd_write_data(client, *str++);
-		i++;
-	}
+static void lcd_print(struct i2c_client *client, const char *str, int len) {
+	printk(KERN_INFO "strlen: %d\n", len);
 
-	for(; i < 16; i++) {
-		lcd_write_data(client, ' ');
+	for (int i = 0; i < 16; i++) {
+		if (*str == '\n') {
+			lcd_write_data(client, ' ');
+			continue;
+		}
+		lcd_write_data(client, *str++);
 	}
 }
 
@@ -180,7 +181,7 @@ static ssize_t hd44780_write(struct file *file, const char __user *buf, size_t l
 	ret = copy_from_user(kbuf, buf, len);
 
 	lcd_write_cmd(hd44780->client, LCD_CLEARDISPLAY);
-	lcd_print(hd44780->client, kbuf);
+	lcd_print(hd44780->client, kbuf, strlen(kbuf));
 
 	return len;
 }
