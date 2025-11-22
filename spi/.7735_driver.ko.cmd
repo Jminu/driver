@@ -1,1 +1,0 @@
-savedcmd_/project/driver/spi/7735_driver.ko := ld -r -EL  -maarch64elf -z noexecstack --no-warn-rwx-segments --build-id=sha1  -T scripts/module.lds -o /project/driver/spi/7735_driver.ko /project/driver/spi/7735_driver.o /project/driver/spi/7735_driver.mod.o /project/driver/spi/.module-common.o
