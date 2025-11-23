@@ -79,8 +79,6 @@ static int sht20_read_data(struct i2c_client *client, int command, int *val) {
 	
 	*val = (buf[0] << 8) | (buf[1] & 0xFC);
 
-	
-
 	return 0;
 }
 
@@ -92,6 +90,8 @@ static ssize_t sht20_read(struct file *file, char __user *buf, size_t len, loff_
 	int temp_raw;
 	int humid_raw;
 	char kbuf[64];
+
+	printk(KERN_INFO "sht20 read\n");
 
 	if (*pos > 0) {
 		printk(KERN_ERR "pos err\n");
@@ -107,9 +107,13 @@ static ssize_t sht20_read(struct file *file, char __user *buf, size_t len, loff_
 		return -1;
 	}
 
-	int temp_c = ((21965 * temp_raw) >> 13) - 46850; // 온도 변환
+	ret = sht20_read_data(sht20->client, HUMID_MEASUREMENT, &humid_raw); // 습도 측정
 
-	len = snprintf(kbuf, sizeof(kbuf), "temp: %d", temp_c);
+	int temp_c = ((21965 * temp_raw) >> 13) - 46850; // 온도 변환
+	int humid_c = ((125000 * humid_raw) >> 16) - 6000; // 습도 변환
+
+	len = snprintf(kbuf, sizeof(kbuf), "Temp:%d", temp_c, humid_c);
+	printk(KERN_INFO "%s\n", kbuf);
 
 	copy_to_user(buf, kbuf, len);
 
