@@ -112,7 +112,7 @@ static ssize_t sht20_read(struct file *file, char __user *buf, size_t len, loff_
 	int temp_c = ((21965 * temp_raw) >> 13) - 46850; // 온도 변환
 	int humid_c = ((125000 * humid_raw) >> 16) - 6000; // 습도 변환
 
-	len = snprintf(kbuf, sizeof(kbuf), "Temp:%d", temp_c, humid_c);
+	len = snprintf(kbuf, sizeof(kbuf), "Temp:%d|Humid:%d", temp_c, humid_c);
 	printk(KERN_INFO "%s\n", kbuf);
 
 	copy_to_user(buf, kbuf, len);

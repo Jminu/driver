@@ -66,14 +66,26 @@ int main(void) {
 
 		while (1) {
 			int len = read(fd_sensor, buf, sizeof(buf) - 1);
+			char *tok = strtok(buf, "|");
+			char humid[10];
+			char temp[10];
+
+			if (tok != NULL) {
+				strcpy(temp, tok);
+			}
+			tok = strtok(NULL, "|");
+			if (tok != NULL) {
+				strcpy(humid, tok);
+			}
+
 			if (len > 0) {
 				if (*shmaddr_p == '0') {
 					printf("temp mode\n");
-					write(fd_lcd, "temp", 4);
+					write(fd_lcd, temp, strlen(temp));
 				}
 				else if (*shmaddr_p == '1') {
 					printf("humid mode\n");
-					write(fd_lcd, "humid", 5);
+					write(fd_lcd, humid, strlen(humid));
 				}
 			}
 			sleep(1);
