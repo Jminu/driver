@@ -66,26 +66,43 @@ int main(void) {
 
 		while (1) {
 			int len = read(fd_sensor, buf, sizeof(buf) - 1);
+			if (len < 0) {
+				perror("read error\n");
+				return -1;
+			}
+			buf[len] = '\0';
 			char *tok = strtok(buf, "|");
-			char humid[10];
-			char temp[10];
+			int humid_raw; // 원본 습도/온도 데이터 (변환 전)
+			int temp_raw;
 
 			if (tok != NULL) {
-				strcpy(temp, tok);
+				temp_raw = atoi(tok);
 			}
 			tok = strtok(NULL, "|");
 			if (tok != NULL) {
-				strcpy(humid, tok);
+				humid_raw = atoi(tok);
 			}
+
+			double temp_val = -46.85 + 175.72 * ((double)temp_raw / 65536.0);
+			double humid_val = -6 + 125 * ((double)humid_raw / 65536.0);
+
+			int temp = temp_val;
+			int humid = humid_val;
+
+			char temp_str[10];
+			char humid_str[10];
+
+			snprintf(temp_str, sizeof(temp_str), "Temp: %d", temp);
+			snprintf(humid_str, sizeof(humid_str), "Humid: %d", humid);
 
 			if (len > 0) {
 				if (*shmaddr_p == '0') {
-					printf("temp mode\n");
-					write(fd_lcd, temp, strlen(temp));
+					printf("%s\n", temp_str);
+					write(fd_lcd, temp_str, strlen(temp_str));
 				}
 				else if (*shmaddr_p == '1') {
-					printf("humid mode\n");
-					write(fd_lcd, humid, strlen(humid));
+					printf("%s\n", humid_str);
+					write(fd_lcd, humid_str, strlen(humid_str));
 				}
 			}
 			sleep(1);

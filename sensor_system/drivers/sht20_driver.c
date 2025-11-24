@@ -16,11 +16,11 @@
 #define CLASS_NAME "sht20_class"
 #define DEVICE_NAME "sht20_device"
 
-#define TEMP_MEASUREMENT 0xE3
-#define HUMID_MEASUREMENT 0xE5
+#define TEMP_MEASUREMENT 0xE3 // temp measurement command
+#define HUMID_MEASUREMENT 0xE5 // humid measurement command
 #define WRITE_USER_REGISTER 0xE6
 #define READ_USER_REGISTER 0xE7
-#define SOFT_RESET 0xFE
+#define SOFT_RESET 0xFE // soft reset command
 
 static struct sht20_device {
 	struct i2c_client *client; // i2c에 연결된 칩 인식
@@ -55,29 +55,30 @@ static int sht20_soft_reset(struct i2c_client *client) {
 
 /*
  * Read data from SHT20
- * @client: target device(SHT20)
- * @command: action
+ * @client: target device(SHT20): client->addr (chip address: 0x40)
+ * @command: TEMP_MEASUREMENT = 0xE3
+ * 			 HUMID_MEASUREMENT = 0xE5
  * @val: variable to store the read value
  */
 static int sht20_read_data(struct i2c_client *client, int command, int *val) {
 	int ret;
-	u8 buf[3]; // 데이터 받을 3바이트
+	u8 buf[3]; // 데이터 받을 unsigned char 3byte
 
-	ret = i2c_smbus_write_byte(client, command); // 명령을 SHT20에 write
+	ret = i2c_smbus_write_byte(client, command); // write command to sht20
 	if (ret < 0) {
-		printk(KERN_ERR "send measurement command fail\n");
+		printk(KERN_ERR "i2c_smbus_write_byte Fail\n");
 		return -1;
 	}
 
 	msleep(100);
 
-	ret = i2c_master_recv(client, buf, 3); // SHT20으로부터 word만큼 데이터 읽음(2byte)
+	ret = i2c_master_recv(client, buf, 3); // SHT20으로부터 word만큼 데이터 읽음(3byte)
 	if (ret < 0) {
-		printk(KERN_ERR "smbus read byte data fail\n");
+		printk(KERN_ERR "i2c_master_recv Fail\n");
 		return -1;
 	}
 	
-	*val = (buf[0] << 8) | (buf[1] & 0xFC);
+	*val = (buf[0] << 8) | (buf[1] & 0xFC); // buf[1]에서 하위 2비트는 stat비트이기 때문에 무시
 
 	return 0;
 }
@@ -100,19 +101,19 @@ static ssize_t sht20_read(struct file *file, char __user *buf, size_t len, loff_
 
 	int ret;
 
-	// test for temperature
-	ret = sht20_read_data(sht20->client, TEMP_MEASUREMENT, &temp_raw); // SHT20을 read하고 온도측정명령, temp_raw에 저장
+	ret = sht20_read_data(sht20->client, TEMP_MEASUREMENT, &temp_raw); // 0x40 chip address를 대상으로 온도 측정 명령
 	if (ret < 0) {
-		printk(KERN_ERR "data read fail\n");
+		printk(KERN_ERR "Temp measurement fail\n");
 		return -1;
 	}
 
-	ret = sht20_read_data(sht20->client, HUMID_MEASUREMENT, &humid_raw); // 습도 측정
+	ret = sht20_read_data(sht20->client, HUMID_MEASUREMENT, &humid_raw); // 0x40 chip address를 대상으로 습고 측정 명령
+	if (ret < 0) {
+		printk(KERN_ERR "Humid measurement fail\n");
+		return -1;
+	}
 
-	int temp_c = ((21965 * temp_raw) >> 13) - 46850; // 온도 변환
-	int humid_c = ((125000 * humid_raw) >> 16) - 6000; // 습도 변환
-
-	len = snprintf(kbuf, sizeof(kbuf), "Temp:%d|Humid:%d", temp_c, humid_c);
+	len = snprintf(kbuf, sizeof(kbuf), "%d|%d", temp_raw, humid_raw);
 	printk(KERN_INFO "%s\n", kbuf);
 
 	copy_to_user(buf, kbuf, len);
