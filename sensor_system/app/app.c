@@ -56,7 +56,11 @@ int main(void) {
 
 		while (1) {
 			int len = read(fd_btn, system_mode, 1);
-			printf("child : len = %d, system_mode: %c\n", len, system_mode[0]);
+			if (len < 0) {
+				perror("[CHILD] read error\n");
+			}
+
+			printf("[CHILD] child : len = %d, system_mode: %c\n", len, system_mode[0]);
 			if (system_mode[0] == '0') {
 				*shmaddr_c = '0';
 			}
@@ -73,9 +77,10 @@ int main(void) {
 		while (is_running) {
 			int len = read(fd_sensor, buf, sizeof(buf) - 1);
 			if (len < 0) {
-				perror("read error\n");
+				perror("[PARENT] read error\n");
 				return -1;
 			}
+
 			buf[len] = '\0';
 			char *tok = strtok(buf, "|");
 			int humid_raw; // 원본 습도/온도 데이터 (변환 전)
@@ -103,11 +108,11 @@ int main(void) {
 
 			if (len > 0) {
 				if (*shmaddr_p == '0') {
-					printf("%s\n", temp_str);
+					printf("[PARENT] %s\n", temp_str);
 					write(fd_lcd, temp_str, strlen(temp_str));
 				}
 				else if (*shmaddr_p == '1') {
-					printf("%s\n", humid_str);
+					printf("[PARENT] %s\n", humid_str);
 					write(fd_lcd, humid_str, strlen(humid_str));
 				}
 			}
@@ -140,12 +145,12 @@ void sig_handler(int signo) {
 		printf("Exiting...\n");
 
 		if (pid > 0) { // at parent
-			printf("parent kill child process\n");
+			printf("[PARENT] parent kill child process\n");
 			kill(pid, SIGKILL);
 			is_running = 0; // 플래그 종료로 바꿈
 		}
 		else { // at child
-			printf("child process exit...\n");
+			printf("[CHILD] child process exit...\n");
 		}
 	}
 }
