@@ -11,6 +11,7 @@ void sig_handler(int signo);
 
 pid_t pid;
 static int is_running = 1;
+static int stop_1sec = 0;
 
 int main(void) {
 	int fd_sensor;
@@ -73,6 +74,11 @@ int main(void) {
 	else if (pid > 0) { // parent -> read sensor and write LCD
 		shmaddr_p = (char *)shmat(shmid, NULL, 0);
 		*shmaddr_p = '0';
+
+		if (stop_1sec == 0) {
+			sleep(1);
+			stop_1sec = 1;
+		}
 
 		while (is_running) {
 			int len = read(fd_sensor, buf, sizeof(buf) - 1);
