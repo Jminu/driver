@@ -3,19 +3,26 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
+
+void sig_handler(int signo);
+
+pid_t pid;
+static int is_running = 1;
 
 int main(void) {
 	int fd_sensor;
 	int fd_lcd;
 	int fd_btn;
 	char buf[32];
-	pid_t pid;
 
 	int shmid;
 	char *shmaddr_p = NULL;
 	char *shmaddr_c = NULL;
+
+	signal(SIGINT, sig_handler);
 
 	shmid = shmget(IPC_PRIVATE, sizeof(char), IPC_CREAT|0666);
 	if (shmid < 0) {
@@ -41,8 +48,6 @@ int main(void) {
 		return -1;
 	}
 
-
-
 	pid = fork();
 	if (pid == 0) { // child -> wait of button interrupt
 		shmaddr_c = (char *)shmat(shmid, NULL, 0);
@@ -65,7 +70,7 @@ int main(void) {
 		shmaddr_p = (char *)shmat(shmid, NULL, 0);
 		*shmaddr_p = '0';
 
-		while (1) {
+		while (is_running) {
 			int len = read(fd_sensor, buf, sizeof(buf) - 1);
 			if (len < 0) {
 				perror("read error\n");
@@ -84,7 +89,7 @@ int main(void) {
 				humid_raw = atoi(tok);
 			}
 
-			double temp_val = -46.85 + 175.72 * ((double)temp_raw / 65536.0);
+			double temp_val = -46.85 + 175.72 * ((double)temp_raw / 65536.0); // 변환
 			double humid_val = -6 + 125 * ((double)humid_raw / 65536.0);
 
 			int temp = temp_val;
@@ -114,9 +119,32 @@ int main(void) {
 		return -1;
 	}
 
+	printf("Cleaning Up\n");
 	close(fd_sensor);
 	close(fd_lcd);
 	close(fd_btn);
 
+	if (shmctl(shmid, IPC_RMID, NULL) == 0) {
+		printf("shared memory delete\n");
+	}
+	else {
+		perror("shared memory delete err\n");
+
+	}
 	return 0;
+}
+
+void sig_handler(int signo) {
+	if (signo == SIGINT) {
+		printf("Exiting...\n");
+
+		if (pid > 0) { // at parent
+			printf("parent kill child process\n");
+			kill(pid, SIGKILL);
+			is_running = 0;
+		}
+		else { // at child
+			printf("child process exit...\n");
+		}
+	}
 }
