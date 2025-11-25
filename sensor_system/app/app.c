@@ -22,7 +22,7 @@ int main(void) {
 	char *shmaddr_p = NULL;
 	char *shmaddr_c = NULL;
 
-	signal(SIGINT, sig_handler);
+	signal(SIGINT, sig_handler); // 시그널 핸들러 등록
 
 	shmid = shmget(IPC_PRIVATE, sizeof(char), IPC_CREAT|0666);
 	if (shmid < 0) {
@@ -124,16 +124,17 @@ int main(void) {
 	close(fd_lcd);
 	close(fd_btn);
 
+	// 공유 메모리 삭제
 	if (shmctl(shmid, IPC_RMID, NULL) == 0) {
 		printf("shared memory delete\n");
 	}
 	else {
 		perror("shared memory delete err\n");
-
 	}
 	return 0;
 }
 
+// SIGINT 시그널 발생 시
 void sig_handler(int signo) {
 	if (signo == SIGINT) {
 		printf("Exiting...\n");
@@ -141,7 +142,7 @@ void sig_handler(int signo) {
 		if (pid > 0) { // at parent
 			printf("parent kill child process\n");
 			kill(pid, SIGKILL);
-			is_running = 0;
+			is_running = 0; // 플래그 종료로 바꿈
 		}
 		else { // at child
 			printf("child process exit...\n");
