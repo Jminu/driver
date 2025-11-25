@@ -36,6 +36,8 @@ static irqreturn_t irq_btn_handler(int irq, void *data) {
 
 static ssize_t read_btn(struct file *file, char __user *buf, size_t len, loff_t *pos) {
 	wait_event_interruptible(wq, flag != 0); // wait queue로 들어감
+	printk(KERN_INFO "read_btn occur\n");
+	
 	flag = 0;
 	if (msg == '0')
 		msg = '1';
